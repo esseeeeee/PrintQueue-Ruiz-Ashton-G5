@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Student workspace · PrintQueue{% endblock %}
+{% block content %}
+<div class="hero">
+  <section class="hero-copy">
+    <p class="eyebrow">Student workspace</p>
+    <h1>Make every page count, {{ user.first_name|default:user.username }}.</h1>
+    <p class="muted">Send your files to a trusted campus print shop and keep every order in one place.</p>
+    <a class="btn" href="#start-order">Start an order</a>
+  </section>
+  <section class="card hero-art">
+    <span class="eyebrow">Your print queue</span>
+    <strong>{{ orders|length }}</strong>
+    <span class="muted">recent orders to keep track of</span>
+  </section>
+</div>
+<div class="grid" id="start-order">
+  <section class="card">
+    <div class="quick-icon">↑</div>
+    <h2>Upload a document</h2>
+    <p class="muted">Upload a PDF or DOCX up to 25 MB and prepare it for printing.</p>
+    <span class="badge">Coming next</span>
+  </section>
+  <section class="card">
+    <div class="quick-icon">⌁</div>
+    <h2>Find a print shop</h2>
+    <p class="muted">Compare paper sizes, color options, and prices near you.</p>
+    <span class="badge">Coming next</span>
+  </section>
+</div>
+<section class="card" style="margin-top:1rem">
+  <div class="page-heading"><div><p class="eyebrow">Activity</p><h2>Recent orders</h2></div><span class="muted">Latest 10</span></div>
+  {% if orders %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>File</th><th>Shop</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+      <tr><td>{{ o.order_id }}</td><td>{{ o.document.file_name }}</td><td>{{ o.shop.name }}</td>
+          <td>₱{{ o.total_amount }}</td><td><span class="badge">{{ o.status }}</span></td>
+          <td>{{ o.order_date|date:"M j, Y" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty-state">Your print queue is clear. Start an order when you are ready.</div>{% endif %}
+</section>
+{% endblock %}

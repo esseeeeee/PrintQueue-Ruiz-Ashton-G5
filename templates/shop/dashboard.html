@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Shop workspace · PrintQueue{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">Print partner workspace</p><h1>Keep the queue moving.</h1><p class="muted">Signed in as {{ user.get_full_name|default:user.username }}</p></div>
+  <a class="btn" href="#orders">View incoming orders</a>
+</div>
+<div class="stats">
+  <div class="stat"><span class="stat-value">{{ shops|length }}</span><span class="stat-label">Your shops</span></div>
+  <div class="stat"><span class="stat-value">{{ orders|length }}</span><span class="stat-label">Recent orders</span></div>
+</div>
+<section class="card">
+  <div class="page-heading"><div><p class="eyebrow">Locations</p><h2>My shops</h2></div><span class="badge">Shop owner</span></div>
+  {% for s in shops %}
+    <p><strong>{{ s.name }}</strong> — {{ s.location }} {% if not s.is_active %}<span class="badge">Closed</span>{% endif %}</p>
+  {% empty %}
+    <div class="empty-state">No shop set up yet. <em>Shop and price setup comes next phase.</em></div>
+  {% endfor %}
+</section>
+<section class="card" id="orders" style="margin-top:1rem">
+  <div class="page-heading"><div><p class="eyebrow">Production queue</p><h2>Incoming orders</h2></div><span class="muted">Latest 20</span></div>
+  {% if orders %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Student</th><th>File</th><th>Shop</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+      <tr><td>{{ o.order_id }}</td><td>{{ o.user.get_full_name|default:o.user.username }}</td>
+          <td>{{ o.document.file_name }}</td><td>{{ o.shop.name }}</td><td>₱{{ o.total_amount }}</td>
+          <td><span class="badge">{{ o.status }}</span></td><td>{{ o.order_date|date:"M j, Y" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty-state">No orders for your shops yet.</div>{% endif %}
+</section>
+{% endblock %}

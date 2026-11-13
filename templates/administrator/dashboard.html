@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Operations · PrintQueue{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Operations</p><h1>PrintQueue at a glance.</h1><p class="muted">Monitor your print network from one workspace.</p></div><a class="btn" href="/admin/">Open admin</a></div>
+<div class="stats">
+  <div class="stat"><span class="stat-value">{{ student_count }}</span><span class="stat-label">Students</span></div>
+  <div class="stat"><span class="stat-value">{{ owner_count }}</span><span class="stat-label">Shop owners</span></div>
+  <div class="stat"><span class="stat-value">{{ shop_count }}</span><span class="stat-label">Print shops</span></div>
+  <div class="stat"><span class="stat-value">{{ order_count }}</span><span class="stat-label">Orders</span></div>
+  <div class="stat"><span class="stat-value">{{ document_count }}</span><span class="stat-label">Documents</span></div>
+</div>
+<section class="card accent"><p class="eyebrow">Admin tools</p><h2>Manage your print ecosystem</h2><p class="muted">Use Django admin to review accounts, shops, documents, pricing, and order records.</p><a class="btn" href="/admin/">Go to Django admin</a></section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Login · PrintQueue{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Welcome back</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "accounts/_form_fields.html" %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn">Log in</button>
+  </form>
+  <p class="muted">No account yet? <a href="{% url 'accounts:register' %}">Register</a></p>
+</div>
+{% endblock %}

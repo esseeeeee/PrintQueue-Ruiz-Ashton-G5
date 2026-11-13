@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PrintQueue{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="{% url 'accounts:dashboard' %}"><span class="brand-mark">✦</span>PrintQueue</a>
+    <nav>
+      {% if user.is_authenticated %}
+        {% if user.is_shop_owner %}
+          <a href="{% url 'accounts:shop_dashboard' %}">Shop Dashboard</a>
+        {% elif user.is_platform_admin %}
+          <a href="{% url 'accounts:admin_dashboard' %}">Admin Dashboard</a>
+        {% elif user.is_student %}
+          <a href="{% url 'accounts:student_dashboard' %}">Student Portal</a>
+        {% else %}
+          <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+        {% endif %}
+        <a href="{% url 'accounts:profile' %}">Profile</a>
+        <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="link-btn">Logout ({{ user.username }})</button>
+        </form>
+      {% else %}
+        <a href="{% url 'accounts:login' %}">Login</a>
+        <a href="{% url 'accounts:register' %}">Register</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="msg {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

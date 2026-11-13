@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}My Profile · PrintQueue{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>My Profile</h1>
+  <div class="profile-head">
+    {% if profile_user.profile_photo %}
+      <img class="avatar" src="{{ profile_user.profile_photo.url }}" alt="Profile photo">
+    {% else %}
+      <div class="avatar placeholder">{{ profile_user.username|first|upper }}</div>
+    {% endif %}
+    <div>
+      <h2>{{ profile_user.get_full_name|default:profile_user.username }}</h2>
+      <span class="badge">{{ profile_user.get_role_display }}</span>
+    </div>
+  </div>
+  <dl>
+    <dt>Username</dt><dd>{{ profile_user.username }}</dd>
+    <dt>Email</dt><dd>{{ profile_user.email }}</dd>
+    <dt>Contact number</dt><dd>{{ profile_user.phone_number|default:"—" }}</dd>
+    <dt>Member since</dt><dd>{{ profile_user.date_joined|date:"F j, Y" }}</dd>
+  </dl>
+  <a class="btn" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+</div>
+{% endblock %}

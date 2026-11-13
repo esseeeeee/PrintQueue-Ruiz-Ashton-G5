@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Register · PrintQueue{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Create your account</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "accounts/_form_fields.html" %}
+    <button type="submit" class="btn">Register</button>
+  </form>
+  <p class="muted">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+</div>
+{% endblock %}

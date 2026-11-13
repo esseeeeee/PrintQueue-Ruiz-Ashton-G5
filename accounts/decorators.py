@@ -1,0 +1,20 @@
+from functools import wraps
+
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+
+
+def role_required(role):
+    """Login required + the user must have `role`, otherwise HTTP 403."""
+
+    def decorator(view_func):
+        @wraps(view_func)
+        @login_required
+        def _wrapped(request, *args, **kwargs):
+            if request.user.role != role:
+                raise PermissionDenied
+            return view_func(request, *args, **kwargs)
+
+        return _wrapped
+
+    return decorator
