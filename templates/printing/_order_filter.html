@@ -1,0 +1,8 @@
+<form method="get" class="filters">
+  {{ filter_form.q }}
+  {{ filter_form.status }}
+  <label>From {{ filter_form.date_from }}</label>
+  <label>To {{ filter_form.date_to }}</label>
+  <button type="submit" class="btn small">Filter</button>
+  <a class="btn small ghost" href="{{ request.path }}">Reset</a>
+</form>

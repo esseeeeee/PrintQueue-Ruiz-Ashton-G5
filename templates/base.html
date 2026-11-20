@@ -21,6 +21,15 @@
         {% else %}
           <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
         {% endif %}
+        {% url 'printing:document_list' as pq_docs %}{% url 'printing:order_list' as pq_orders %}
+        {% url 'printing:shop_order_list' as pq_queue %}{% url 'printing:shop_list' as pq_shops %}
+        {% if user.is_student %}
+          {% if pq_docs %}<a href="{{ pq_docs }}">Documents</a>{% endif %}
+          {% if pq_orders %}<a href="{{ pq_orders }}">My Orders</a>{% endif %}
+        {% elif user.is_shop_owner %}
+          {% if pq_queue %}<a href="{{ pq_queue }}">Order Queue</a>{% endif %}
+          {% if pq_shops %}<a href="{{ pq_shops }}">Shops &amp; Prices</a>{% endif %}
+        {% endif %}
         <a href="{% url 'accounts:profile' %}">Profile</a>
         <form method="post" action="{% url 'accounts:logout' %}" class="inline">
           {% csrf_token %}
