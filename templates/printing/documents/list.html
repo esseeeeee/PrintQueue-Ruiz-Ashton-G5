@@ -1,0 +1,42 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}My Documents · PrintQueue{% endblock %}
+{% block pq %}
+<div class="toolbar">
+  <h1>My documents</h1>
+  <div>
+    <a class="btn" href="{% url 'printing:document_upload' %}">Upload document</a>
+    {% url 'printing:order_create' as order_create_url %}
+    {% if order_create_url and documents %}<a class="btn ghost" href="{{ order_create_url }}">Place an order</a>{% endif %}
+  </div>
+</div>
+<section class="card">
+  {% if documents %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>File</th><th>Pages</th><th>Uploaded</th><th>Orders</th><th></th></tr></thead>
+    <tbody>
+    {% for d in documents %}
+      <tr>
+        <td>{{ d.file_name }}</td>
+        <td>{{ d.page_count }}</td>
+        <td>{{ d.uploaded_at|date:"M j, Y g:i A" }}</td>
+        <td>{{ d.order_count }}</td>
+        <td class="actions">
+          <a class="btn small ghost" href="{% url 'printing:document_download' d.document_id %}">Download</a>
+          {% if order_create_url %}<a class="btn small" href="{{ order_create_url }}?document={{ d.document_id }}">Order</a>{% endif %}
+          {% if d.order_count == 0 %}
+          <form method="post" action="{% url 'printing:document_delete' d.document_id %}" class="inline"
+                onsubmit="return confirm('Delete this document?');">
+            {% csrf_token %}<button type="submit" class="btn small danger">Delete</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="muted small-note">Documents used by an order can't be deleted.</p>
+  {% else %}
+  <p class="muted">You haven't uploaded anything yet. PDF and DOCX files up to 25 MB are accepted.</p>
+  {% endif %}
+</section>
+{% endblock %}
