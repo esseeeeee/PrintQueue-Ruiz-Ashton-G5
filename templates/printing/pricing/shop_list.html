@@ -1,0 +1,53 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}Shops & Prices · PrintQueue{% endblock %}
+{% block pq %}
+<div class="toolbar">
+  <h1>My shops &amp; prices</h1>
+  <a class="btn" href="{% url 'printing:shop_create' %}">Add shop</a>
+</div>
+{% for shop in shops %}
+<section class="card stack">
+  <div class="toolbar">
+    <div>
+      <h2>{{ shop.name }}
+        {% if shop.is_active %}<span class="badge st-completed">Open</span>{% else %}<span class="badge st-cancelled">Closed</span>{% endif %}
+      </h2>
+      <p class="muted">{{ shop.location }} · {{ shop.order_count }} order{{ shop.order_count|pluralize }}</p>
+    </div>
+    <div class="actions">
+      <a class="btn small" href="{% url 'printing:price_create' shop.shop_id %}">Add price rule</a>
+      <a class="btn small ghost" href="{% url 'printing:shop_edit' shop.shop_id %}">Edit shop</a>
+      {% if shop.order_count == 0 %}
+      <form method="post" action="{% url 'printing:shop_delete' shop.shop_id %}" class="inline"
+            onsubmit="return confirm('Delete this shop and its price rules?');">
+        {% csrf_token %}<button type="submit" class="btn small danger">Delete</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% if shop.prices.all %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Paper size</th><th>Color</th><th>Price per page</th><th></th></tr></thead>
+    <tbody>
+    {% for p in shop.prices.all %}
+      <tr>
+        <td>{{ p.paper_size }}</td><td>{{ p.color_option }}</td><td>₱{{ p.price_per_page }}</td>
+        <td class="actions">
+          <a class="btn small ghost" href="{% url 'printing:price_edit' p.price_id %}">Edit</a>
+          <form method="post" action="{% url 'printing:price_delete' p.price_id %}" class="inline"
+                onsubmit="return confirm('Delete this price rule?');">
+            {% csrf_token %}<button type="submit" class="btn small danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="muted">No price rules yet. Students can't order from this shop until you add one.</p>
+  {% endif %}
+</section>
+{% empty %}
+<section class="card"><p class="muted">You don't have a print shop yet. Add one to start receiving orders.</p></section>
+{% endfor %}
+{% endblock %}
