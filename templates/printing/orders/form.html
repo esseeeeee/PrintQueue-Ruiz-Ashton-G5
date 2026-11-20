@@ -1,0 +1,40 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}{{ title }} · PrintQueue{% endblock %}
+{% block pq %}
+<div class="card narrow">
+  <h1>{{ title }}</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "accounts/_form_fields.html" %}
+    <div class="preview">
+      <span class="muted">Estimated total</span>
+      <strong id="total-preview">Select a document and print settings</strong>
+    </div>
+    <button type="submit" class="btn">Save order</button>
+    <a class="btn ghost" href="{% url 'printing:order_list' %}">Cancel</a>
+  </form>
+  <p class="muted small-note">Payment is cash on pickup at the shop. The final total is calculated by the server.</p>
+</div>
+{{ pages_map|json_script:"pages-data" }}
+{{ rates_map|json_script:"rates-data" }}
+<script>
+(function () {
+  var pages = JSON.parse(document.getElementById('pages-data').textContent);
+  var rates = JSON.parse(document.getElementById('rates-data').textContent);
+  var doc = document.getElementById('id_document');
+  var price = document.getElementById('id_price');
+  var out = document.getElementById('total-preview');
+  function update() {
+    var p = pages[doc.value], r = rates[price.value];
+    if (p && r) {
+      out.textContent = '₱' + (p * parseFloat(r)).toFixed(2) + '  (' + p + ' pages × ₱' + parseFloat(r).toFixed(2) + ')';
+    } else {
+      out.textContent = 'Select a document and print settings';
+    }
+  }
+  doc.addEventListener('change', update);
+  price.addEventListener('change', update);
+  update();
+})();
+</script>
+{% endblock %}

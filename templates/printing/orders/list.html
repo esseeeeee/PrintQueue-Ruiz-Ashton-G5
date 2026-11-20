@@ -1,0 +1,34 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}My Orders · PrintQueue{% endblock %}
+{% block pq %}
+<div class="toolbar">
+  <h1>My orders</h1>
+  <a class="btn" href="{% url 'printing:order_create' %}">New order</a>
+</div>
+{% include "printing/_order_filter.html" %}
+<section class="card">
+  {% if page_obj.object_list %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>File</th><th>Shop</th><th>Settings</th><th>Pages</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
+    <tbody>
+    {% for o in page_obj %}
+      <tr>
+        <td>{{ o.order_id }}</td>
+        <td>{{ o.document.file_name }}</td>
+        <td>{{ o.shop.name }}</td>
+        <td>{{ o.price.paper_size }}, {{ o.price.color_option }}</td>
+        <td>{{ o.document.page_count }}</td>
+        <td>₱{{ o.total_amount }}</td>
+        <td><span class="badge st-{{ o.status|slugify }}">{{ o.get_status_display }}</span></td>
+        <td>{{ o.order_date|date:"M j, Y" }}</td>
+        <td class="actions"><a class="btn small ghost" href="{% url 'printing:order_detail' o.order_id %}">View</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "printing/_pagination.html" %}
+  {% else %}
+  <p class="muted">No orders found.</p>
+  {% endif %}
+</section>
+{% endblock %}

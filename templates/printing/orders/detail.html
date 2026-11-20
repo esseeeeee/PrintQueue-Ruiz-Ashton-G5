@@ -1,0 +1,36 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}Order #{{ order.order_id }} · PrintQueue{% endblock %}
+{% block pq %}
+<div class="toolbar">
+  <h1>Order #{{ order.order_id }} <span class="badge st-{{ order.status|slugify }}">{{ order.get_status_display }}</span></h1>
+  <a class="btn ghost" href="{% url 'printing:order_list' %}">← All orders</a>
+</div>
+<section class="card">
+  <dl>
+    <dt>Document</dt><dd>{{ order.document.file_name }} ({{ order.document.page_count }} pages)</dd>
+    <dt>Shop</dt><dd>{{ order.shop.name }} — {{ order.shop.location }}</dd>
+    <dt>Print settings</dt><dd>{{ order.price.paper_size }}, {{ order.price.color_option }}</dd>
+    <dt>Total</dt><dd><strong>₱{{ order.total_amount }}</strong> <span class="muted">(cash on pickup)</span></dd>
+    <dt>Placed</dt><dd>{{ order.order_date|date:"F j, Y g:i A" }}</dd>
+  </dl>
+  <div class="actions">
+    <a class="btn small ghost" href="{% url 'printing:document_download' order.document.document_id %}">Download file</a>
+    {% if can_edit %}
+      <a class="btn small" href="{% url 'printing:order_edit' order.order_id %}">Edit order</a>
+      <form method="post" action="{% url 'printing:order_cancel' order.order_id %}" class="inline"
+            onsubmit="return confirm('Cancel this order?');">
+        {% csrf_token %}<button type="submit" class="btn small danger">Cancel order</button>
+      </form>
+    {% endif %}
+    {% if can_delete %}
+      <form method="post" action="{% url 'printing:order_delete' order.order_id %}" class="inline"
+            onsubmit="return confirm('Permanently delete this order?');">
+        {% csrf_token %}<button type="submit" class="btn small danger">Delete</button>
+      </form>
+    {% endif %}
+  </div>
+  {% if order.status == "READY FOR PICKUP" %}
+    <p class="msg success" style="margin-top:1rem">Your prints are ready. Bring ₱{{ order.total_amount }} to {{ order.shop.name }}.</p>
+  {% endif %}
+</section>
+{% endblock %}
