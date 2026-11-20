@@ -6,7 +6,7 @@
     <p class="eyebrow">Student workspace</p>
     <h1>Make every page count, {{ user.first_name|default:user.username }}.</h1>
     <p class="muted">Send your files to a trusted campus print shop and keep every order in one place.</p>
-    <a class="btn" href="#start-order">Start an order</a>
+    <a class="btn" href="{% url 'printing:order_create' %}">Start an order</a>
   </section>
   <section class="card hero-art">
     <span class="eyebrow">Your print queue</span>
@@ -19,13 +19,15 @@
     <div class="quick-icon">↑</div>
     <h2>Upload a document</h2>
     <p class="muted">Upload a PDF or DOCX up to 25 MB and prepare it for printing.</p>
-    <span class="badge">Coming next</span>
+    <a class="btn" href="{% url 'printing:document_upload' %}">Upload</a>
+    <a class="btn ghost" href="{% url 'printing:document_list' %}">My documents</a>
   </section>
   <section class="card">
     <div class="quick-icon">⌁</div>
-    <h2>Find a print shop</h2>
-    <p class="muted">Compare paper sizes, color options, and prices near you.</p>
-    <span class="badge">Coming next</span>
+    <h2>Place a print order</h2>
+    <p class="muted">Compare paper sizes, color options, and prices, then see your total.</p>
+    <a class="btn" href="{% url 'printing:order_create' %}">New order</a>
+    <a class="btn ghost" href="{% url 'printing:order_list' %}">My orders</a>
   </section>
 </div>
 <section class="card" style="margin-top:1rem">
