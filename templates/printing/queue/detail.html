@@ -1,0 +1,42 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}Order #{{ order.order_id }} · PrintQueue{% endblock %}
+{% block pq %}
+<div class="toolbar">
+  <h1>Order #{{ order.order_id }} <span class="badge st-{{ order.status|slugify }}">{{ order.get_status_display }}</span></h1>
+  <a class="btn ghost" href="{% url 'printing:shop_order_list' %}">← Order queue</a>
+</div>
+<section class="card">
+  <dl>
+    <dt>Student</dt><dd>{{ order.user.get_full_name|default:order.user.username }}{% if order.user.phone_number %} · {{ order.user.phone_number }}{% endif %}</dd>
+    <dt>Document</dt><dd>{{ order.document.file_name }} ({{ order.document.page_count }} pages)</dd>
+    <dt>Shop</dt><dd>{{ order.shop.name }}</dd>
+    <dt>Print settings</dt><dd>{{ order.price.paper_size }}, {{ order.price.color_option }} — ₱{{ order.price.price_per_page }}/page</dd>
+    <dt>Total</dt><dd><strong>₱{{ order.total_amount }}</strong></dd>
+    <dt>Placed</dt><dd>{{ order.order_date|date:"F j, Y g:i A" }}</dd>
+    {% if payment %}<dt>Payment</dt><dd>₱{{ payment.amount_paid }} received on {{ payment.payment_date|date:"M j, Y g:i A" }}</dd>{% endif %}
+  </dl>
+  <div class="actions">
+    {% if can_download %}
+      <a class="btn small" href="{% url 'printing:document_download' order.document.document_id %}">Download file</a>
+    {% endif %}
+    {% for value, label in actions %}
+      <form method="post" action="{% url 'printing:shop_order_status' order.order_id %}" class="inline"
+            {% if value == "CANCELLED" %}onsubmit="return confirm('Cancel this order?');"{% endif %}>
+        {% csrf_token %}<input type="hidden" name="status" value="{{ value }}">
+        <button type="submit" class="btn small {% if value == 'CANCELLED' %}danger{% endif %}">
+          {% if value == "PRINTING" %}Start printing{% elif value == "READY FOR PICKUP" %}Mark ready for pickup{% elif value == "CANCELLED" %}Cancel order{% else %}{{ label }}{% endif %}
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+  {% if order.status == "READY FOR PICKUP" %}
+  <hr>
+  <h2>Record cash payment</h2>
+  <form method="post" action="{% url 'printing:shop_order_payment' order.order_id %}" class="filters">
+    {% csrf_token %}
+    <label>{{ payment_form.amount_paid.label }} {{ payment_form.amount_paid }}</label>
+    <button type="submit" class="btn small">Record payment &amp; complete</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

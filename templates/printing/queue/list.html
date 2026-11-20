@@ -1,0 +1,51 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}Order Queue · PrintQueue{% endblock %}
+{% block pq %}
+<div class="toolbar"><h1>Incoming orders</h1>
+  <a class="btn ghost" href="{% url 'printing:shop_list' %}">Shops &amp; prices</a></div>
+<div class="grid">
+  <section class="card"><h2>{{ counts.pending }}</h2><p class="muted">Pending</p></section>
+  <section class="card"><h2>{{ counts.printing }}</h2><p class="muted">Printing</p></section>
+  <section class="card"><h2>{{ counts.ready }}</h2><p class="muted">Ready for pickup</p></section>
+</div>
+<div style="height:1rem"></div>
+{% include "printing/_order_filter.html" %}
+<section class="card">
+  {% if page_obj.object_list %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Student</th><th>File</th><th>Settings</th><th>Pages</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
+    <tbody>
+    {% for o in page_obj %}
+      <tr>
+        <td>{{ o.order_id }}</td>
+        <td>{{ o.user.get_full_name|default:o.user.username }}</td>
+        <td>{{ o.document.file_name }}</td>
+        <td>{{ o.price.paper_size }}, {{ o.price.color_option }}</td>
+        <td>{{ o.document.page_count }}</td>
+        <td>₱{{ o.total_amount }}</td>
+        <td><span class="badge st-{{ o.status|slugify }}">{{ o.get_status_display }}</span></td>
+        <td>{{ o.order_date|date:"M j, g:i A" }}</td>
+        <td class="actions">
+          <a class="btn small ghost" href="{% url 'printing:shop_order_detail' o.order_id %}">Open</a>
+          {% if o.status == "PENDING" %}
+          <form method="post" action="{% url 'printing:shop_order_status' o.order_id %}" class="inline">
+            {% csrf_token %}<input type="hidden" name="status" value="PRINTING"><input type="hidden" name="from" value="list">
+            <button type="submit" class="btn small">Start printing</button>
+          </form>
+          {% elif o.status == "PRINTING" %}
+          <form method="post" action="{% url 'printing:shop_order_status' o.order_id %}" class="inline">
+            {% csrf_token %}<input type="hidden" name="status" value="READY FOR PICKUP"><input type="hidden" name="from" value="list">
+            <button type="submit" class="btn small">Mark ready</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "printing/_pagination.html" %}
+  {% else %}
+  <p class="muted">No orders found for your shops.</p>
+  {% endif %}
+</section>
+{% endblock %}
