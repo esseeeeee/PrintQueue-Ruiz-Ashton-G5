@@ -43,6 +43,43 @@ class StudentOrderTests(OrderQueueBase):
         self.assertEqual((order.user, order.shop, order.status, order.total_amount),
                          (self.student, self.shop, "PENDING", Decimal("20.00")))
 
+    def test_duplicate_pending_order_is_rejected(self):
+        data = {"document": self.doc.pk, "price": self.bw.pk}
+        self.client.post(reverse("printing:order_create"), data)
+
+        response = self.client.post(reverse("printing:order_create"), data)
+
+        self.assertEqual(PrintOrder.objects.count(), 1)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("already have a pending order", str(response.context["form"].non_field_errors()))
+
+    def test_reversed_date_filter_is_ignored_with_error(self):
+        response = self.client.get(reverse("printing:order_list"), {
+            "date_from": "2026-02-02",
+            "date_to": "2026-01-01",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["filter_form"].is_valid())
+        self.assertContains(response, "The filter was ignored")
+
+    def test_delete_get_shows_confirmation_without_deleting(self):
+        order = self.order()
+
+        response = self.client.get(reverse("printing:order_delete", args=[order.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Delete order")
+        self.assertContains(response, 'method="post"')
+        self.assertTrue(PrintOrder.objects.filter(pk=order.pk).exists())
+
+    def test_huge_order_id_returns_custom_404(self):
+        with self.settings(DEBUG=False):
+            response = self.client.get("/printing/orders/999999999999999999/")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, "404.html")
+
     def test_cannot_order_someone_elses_document_or_closed_shop(self):
         self.login("stud2")
         self.client.post(reverse("printing:order_create"), {"document": self.doc.pk, "price": self.bw.pk})
