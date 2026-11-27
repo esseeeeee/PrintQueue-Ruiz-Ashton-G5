@@ -131,6 +131,19 @@ class PricingTests(TestCase):
                          {"paper_size": "A4", "color_option": "Black & White", "price_per_page": "2.50"})
         self.assertEqual(shop.prices.get().price_per_page, Decimal("2.50"))
 
+    def test_duplicate_shop_name_is_rejected_case_insensitively(self):
+        self.make_shop()
+
+        response = self.client.post(reverse("printing:shop_create"), {
+            "name": "  copy corner ",
+            "location": "Another place",
+            "is_active": "on",
+        })
+
+        self.assertEqual(PrintShop.objects.filter(owner=self.owner).count(), 1)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already have a shop with this name")
+
     def test_price_must_be_positive_and_unique(self):
         shop = self.make_shop()
         url = reverse("printing:price_create", args=[shop.pk])

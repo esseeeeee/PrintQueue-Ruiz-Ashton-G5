@@ -24,6 +24,31 @@ The `printing` app already contains the SDD data model (`print_shops`, `print_pr
 Main URLs: `/printing/documents/`, `/printing/orders/`, `/printing/shop/shops/`, `/printing/shop/orders/`.
 Business rules BR-03 to BR-10 are enforced in forms/views and by database constraints. Git workflow: see `GIT_WORKFLOW.md`.
 
+## Project Development 3 – Hardening
+No new features. The existing features were made reliable, secure and tested. Details and evidence: `docs/PrintQueue-Ruiz-Ashton-G5-PD3.pdf`.
+
+| Area | What was done |
+|---|---|
+| PD2 issues | ISS-01 tests no longer ask to delete the old test database · ISS-02 profile photos work with `DEBUG=False` (served by a login-protected view; there is no public `/media/` URL) · ISS-03 tests can run on a local PostgreSQL and use a fast password hasher |
+| Validation / errors | Server-side validation on every form · duplicate and bad-date filters handled · custom 404, 403, 400, 500 and CSRF pages · bad or huge IDs return 404 |
+| Security | Login + role check inside every view · other users' records give 404 · POST-only actions · CSRF everywhere · no raw SQL, no `|safe` · secrets and `DEBUG` come from `.env` |
+| Data integrity | Unique and check constraints (migration `0002`) · correct `on_delete` rules · `transaction.atomic()` on multi-step saves · redirect after POST + double-click protection · confirmation page before every delete · files removed from disk when a document is deleted |
+| Tests | 60 automated Django tests (`python manage.py test`), including invalid input, duplicate submissions, access control, and confirmation flows |
+
+## Running the tests
+```bash
+python manage.py test            # all tests (never asks questions)
+python manage.py test printing   # only the core feature
+python manage.py test accounts   # only the account features
+```
+Tests use a separate PostgreSQL database (`printqueue_test`), so your real data is safe.
+The test runner keeps and reuses this database between runs, avoiding cleanup errors when a PostgreSQL session is still connected.
+Running on Supabase is slow. To run the tests on a **local PostgreSQL** instead, add these to your `.env` (see `.env.example`):
+```
+TEST_DB_HOST=localhost
+TEST_DB_PASSWORD=<your local postgres password>
+```
+
 ## Setup
 ```bash
 git clone https://github.com/<your-username>/<your-repo-name>.git
@@ -33,11 +58,11 @@ venv\Scripts\activate            # macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
 copy .env.example .env           # macOS/Linux: cp .env.example .env
 # edit .env: SECRET_KEY + your Supabase (Session pooler) or local PostgreSQL values
+# Keep DEBUG=False outside local development; DEBUG=True enables detailed error pages.
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
-Run the tests: `python manage.py test`
 
 ## Notes
 - `.env`, `venv/` and `__pycache__/` are git-ignored. Never commit real credentials.
