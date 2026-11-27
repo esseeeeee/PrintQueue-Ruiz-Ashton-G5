@@ -54,6 +54,8 @@ class User(AbstractUser):
         }.get(self.role, "accounts:student_dashboard")
 
     def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.email.strip().lower()  # BR-01: no duplicates that differ only by letter case
         if self.is_superuser:  # createsuperuser -> Administrator role
             self.role = self.Role.ADMIN
         super().save(*args, **kwargs)

@@ -52,5 +52,16 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+<script>
+/* Stop double submits: disable submit buttons right after a form is sent. */
+document.addEventListener('submit', function (e) {
+  if (e.defaultPrevented || !e.target.method || e.target.method.toLowerCase() !== 'post') return;
+  var buttons = e.target.querySelectorAll('button[type=submit]');
+  setTimeout(function () { buttons.forEach(function (b) { b.disabled = true; }); }, 0);
+});
+window.addEventListener('pageshow', function () {
+  document.querySelectorAll('button[type=submit]').forEach(function (b) { b.disabled = false; });
+});
+</script>
 </body>
 </html>

@@ -1,6 +1,9 @@
+import mimetypes
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
+from django.http import FileResponse, Http404
 from django.shortcuts import redirect, render
 
 from .decorators import role_required
@@ -30,6 +33,21 @@ class PrintQueueLoginView(LoginView):
     template_name = "accounts/login.html"
     authentication_form = LoginForm
     redirect_authenticated_user = True
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        name = self.request.user.first_name or self.request.user.username
+        messages.success(self.request, f"Welcome back, {name}!")
+        return response
+
+
+class PrintQueueLogoutView(LogoutView):
+    """POST-only logout (Django 5) that also confirms to the user."""
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        messages.success(request, "You have been logged out.")
+        return response
 
 
 @login_required
@@ -89,3 +107,19 @@ def profile_edit(request):
     else:
         form = ProfileUpdateForm(instance=request.user)
     return render(request, "accounts/profile_edit.html", {"form": form})
+
+
+@login_required
+def profile_photo(request):
+    """Sends the signed-in user's OWN photo. Works with DEBUG=False (fixes PD2 ISS-02)."""
+    photo = request.user.profile_photo
+    if not photo:
+        raise Http404("No profile photo.")
+    try:
+        handle = photo.open("rb")
+    except (FileNotFoundError, ValueError):
+        raise Http404("Photo file is missing.")
+    content_type = mimetypes.guess_type(photo.name)[0] or "application/octet-stream"
+    response = FileResponse(handle, content_type=content_type)
+    response["Cache-Control"] = "private, no-cache"
+    return response

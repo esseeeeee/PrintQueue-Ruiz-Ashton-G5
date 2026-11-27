@@ -12,6 +12,22 @@ class ShopForm(forms.ModelForm):
         fields = ("name", "location", "is_active")
         labels = {"is_active": "Shop is open (accepting orders)"}
 
+    def __init__(self, *args, owner, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.owner = owner
+
+    def clean_name(self):
+        name = " ".join(self.cleaned_data["name"].split())
+        duplicates = PrintShop.objects.filter(owner=self.owner, name__iexact=name)
+        if self.instance.pk:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if duplicates.exists():
+            raise ValidationError("You already have a shop with this name.")
+        return name
+
+    def clean_location(self):
+        return " ".join(self.cleaned_data["location"].split())
+
 
 class PriceForm(forms.ModelForm):
     price_per_page = forms.DecimalField(

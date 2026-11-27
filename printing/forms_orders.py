@@ -32,18 +32,35 @@ class OrderForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        price = cleaned.get("price")
+        price, document = cleaned.get("price"), cleaned.get("document")
         if price:
             self.instance.shop = price.shop
+        if price and document:
+            # Stops double-clicks / repeated submits from creating the same order twice.
+            duplicates = PrintOrder.objects.filter(
+                user=self.instance.user, document=document, price=price,
+                status=PrintOrder.Status.PENDING)
+            if self.instance.pk:
+                duplicates = duplicates.exclude(pk=self.instance.pk)
+            if duplicates.exists():
+                raise forms.ValidationError(
+                    "You already have a pending order for this document with these settings.")
         return cleaned
 
 
 class OrderFilterForm(forms.Form):
-    q = forms.CharField(required=False, widget=forms.TextInput(attrs={"placeholder": "Search file, shop or student"}))
+    q = forms.CharField(required=False, max_length=100, widget=forms.TextInput(attrs={"placeholder": "Search file, shop or student"}))
     status = forms.ChoiceField(
         required=False, choices=[("", "All statuses")] + list(PrintOrder.Status.choices))
     date_from = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     date_to = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+
+    def clean(self):
+        cleaned = super().clean()
+        start, end = cleaned.get("date_from"), cleaned.get("date_to")
+        if start and end and start > end:
+            raise forms.ValidationError("The 'From' date must be before the 'To' date.")
+        return cleaned
 
 
 class PaymentForm(forms.Form):

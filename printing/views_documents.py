@@ -6,11 +6,12 @@ from django.db import transaction
 from django.db.models import Count, ProtectedError
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
 
 from accounts.decorators import role_required
 from accounts.models import User
 
+from .confirm import render_confirm
 from .forms_documents import DocumentUploadForm
 from .models import Document
 from .workflow import SHOP_VISIBLE_DOWNLOAD
@@ -33,15 +34,16 @@ def document_upload(request):
     if request.method == "POST":
         form = DocumentUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            document = form.save(commit=False)
-            document.user = request.user
-            document.file_name = form.original_name
-            document.save()
+            with transaction.atomic():
+                document = form.save(commit=False)
+                document.user = request.user
+                document.file_name = form.original_name
+                document.save()
             messages.success(
                 request,
                 f"“{document.file_name}” uploaded successfully ({document.page_count} pages).",
             )
-            return redirect("printing:document_list")
+            return redirect("printing:document_list")  # redirect after POST: no duplicate uploads
         messages.error(request, "Upload failed. Please fix the errors below.")
     else:
         form = DocumentUploadForm()
@@ -49,21 +51,27 @@ def document_upload(request):
 
 
 @role_required(STUDENT)
-@require_POST
+@require_http_methods(["GET", "POST"])
 def document_delete(request, pk):
+    """GET = 'Are you sure?' page (changes nothing). POST = delete."""
     document = get_object_or_404(Document.objects.for_student(request.user), pk=pk)
     if document.orders.exists():  # BR-09
         messages.error(request, "This document is used by an order, so it can't be deleted.")
         return redirect("printing:document_list")
 
-    name, storage, stored_name = document.file_name, document.file.storage, document.file.name
+    if request.method == "GET":
+        return render_confirm(
+            request, title="Delete this document?",
+            message=f"“{document.file_name}” will be deleted permanently. This cannot be undone.",
+            action_url=request.path, cancel_url="/printing/documents/")
+
+    name = document.file_name
     try:
         with transaction.atomic():
-            document.delete()
+            document.delete()  # the file on disk is removed by a signal (printing/signals.py)
     except ProtectedError:
         messages.error(request, "This document is used by an order, so it can't be deleted.")
         return redirect("printing:document_list")
-    storage.delete(stored_name)
     messages.success(request, f"“{name}” was deleted.")
     return redirect("printing:document_list")
 

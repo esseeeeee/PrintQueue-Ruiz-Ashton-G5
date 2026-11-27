@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from decouple import Csv, config
@@ -63,6 +64,24 @@ DATABASES = {
     }
 }
 
+# --- Tests (fixes PD2 ISS-01 and ISS-03) ---
+RUNNING_TESTS = "test" in sys.argv
+DATABASES["default"]["TEST"] = {"NAME": "printqueue_test"}
+# Optional: run the tests on a local PostgreSQL instead of Supabase (much faster).
+_test_host = config("TEST_DB_HOST", default="")
+if RUNNING_TESTS and _test_host:
+    DATABASES["default"].update({
+        "HOST": _test_host,
+        "PORT": config("TEST_DB_PORT", default="5432"),
+        "USER": config("TEST_DB_USER", default="postgres"),
+        "PASSWORD": config("TEST_DB_PASSWORD", default=""),
+        "OPTIONS": {"sslmode": config("TEST_DB_SSLMODE", default="prefer")},
+    })
+# Keep the separate test database to avoid DROP DATABASE failures from lingering sessions.
+TEST_RUNNER = "config.test_runner.NoPromptTestRunner"
+if RUNNING_TESTS:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]  # faster tests only
+
 # --- Auth ---
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
@@ -93,8 +112,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"  # SERIAL, as in the SDD
 
 MESSAGE_TAGS = {message_constants.ERROR: "error"}
 
-# Session / cookie hardening
+# --- Security hardening ---
+CSRF_FAILURE_VIEW = "config.views.csrf_failure"   # friendly page instead of a bare 403
+X_FRAME_OPTIONS = "DENY"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_AGE = 60 * 60 * 8                   # log out automatically after 8 hours
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+    SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+    CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())

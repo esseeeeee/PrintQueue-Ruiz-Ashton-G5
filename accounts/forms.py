@@ -53,6 +53,17 @@ class ProfileUpdateForm(forms.ModelForm):
             raise forms.ValidationError("This email is used by another account.")
         return email
 
+    def save(self, commit=True):
+        old_name = None
+        if self.instance.pk and "profile_photo" in self.changed_data:
+            old_name = (User.objects.filter(pk=self.instance.pk)
+                        .values_list("profile_photo", flat=True).first())
+        user = super().save(commit)
+        new_name = user.profile_photo.name if user.profile_photo else ""
+        if commit and old_name and old_name != new_name:
+            user.profile_photo.storage.delete(old_name)  # no orphaned files
+        return user
+
     def clean_profile_photo(self):
         photo = self.cleaned_data.get("profile_photo")
         if photo and hasattr(photo, "size"):

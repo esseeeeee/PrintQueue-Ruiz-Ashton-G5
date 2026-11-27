@@ -6,10 +6,20 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 
 from .validators import validate_document_file
 
 User = settings.AUTH_USER_MODEL
+
+
+# on_delete summary (PD3 data integrity):
+#   PrintShop.owner        PROTECT  - a user who owns shops cannot be deleted by accident
+#   PrintPrice.shop        CASCADE  - prices have no meaning without their shop
+#   Document.user          CASCADE  - a student's unused files go with the student
+#                                     (files used by orders are still protected by PrintOrder.document)
+#   PrintOrder.*           PROTECT  - order history must never disappear silently
+#   Payment.order/collected_by PROTECT - payment records must be kept
 
 
 # ---------- print_shops ----------
@@ -25,6 +35,10 @@ class PrintShop(models.Model):
 
     class Meta:
         db_table = "print_shops"
+        constraints = [
+            # One owner cannot have two shops with the same name (ignoring upper/lower case)
+            models.UniqueConstraint(Lower("name"), "owner", name="unique_shop_name_per_owner"),
+        ]
 
     def __str__(self):
         return self.name
@@ -50,6 +64,9 @@ class PrintPrice(models.Model):
     class Meta:
         db_table = "print_prices"
         constraints = [
+            # One price rule per shop + paper size + color (also protects against double clicks)
+            models.UniqueConstraint(
+                fields=["shop", "paper_size", "color_option"], name="unique_price_rule_per_shop"),
             models.CheckConstraint(condition=Q(price_per_page__gt=0), name="price_per_page_positive"),  # BR-04
             models.CheckConstraint(condition=Q(paper_size__in=["Short", "A4", "Long"]), name="paper_size_valid"),
             models.CheckConstraint(
@@ -81,6 +98,9 @@ class Document(models.Model):
 
     class Meta:
         db_table = "documents"
+        constraints = [
+            models.CheckConstraint(condition=Q(page_count__gte=1), name="document_page_count_positive"),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.file_name and self.file:
