@@ -10,7 +10,7 @@ from accounts.models import User
 
 from .forms_orders import OrderFilterForm, PaymentForm
 from .models import Payment, PrintOrder
-from .views_orders import apply_order_filters, paginate
+from .views_orders import apply_order_filters, paginate, warn_if_bad_filter
 from .workflow import allowed_next, next_actions
 
 OWNER = User.Role.SHOP_OWNER
@@ -31,6 +31,7 @@ def shop_order_list(request):
         ready=Count("pk", filter=Q(status="READY FOR PICKUP")),
     )
     form = OrderFilterForm(request.GET or None)
+    warn_if_bad_filter(request, form)
     orders = base.select_related("user", "shop", "document", "price").order_by("-order_date")
     page_obj, querystring = paginate(request, apply_order_filters(orders, form, for_owner=True))
     return render(request, "printing/queue/list.html", {
