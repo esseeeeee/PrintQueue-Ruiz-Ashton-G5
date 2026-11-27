@@ -56,7 +56,8 @@ class AccountFeatureTests(TestCase):
 
     def test_password_is_hashed(self):
         self.assertNotEqual(self.student.password, "Pass12345!x")
-        self.assertTrue(self.student.password.startswith("pbkdf2_"))
+        self.assertIn("$", self.student.password)            # "algorithm$salt$hash" format
+        self.assertTrue(self.student.check_password("Pass12345!x"))
 
     def test_logout_requires_post_and_ends_session(self):
         self.client.login(username="stud", password="Pass12345!x")
