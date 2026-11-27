@@ -3,11 +3,12 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 
 from accounts.decorators import role_required
 from accounts.models import User
 
+from .confirm import render_confirm
 from .forms_orders import OrderFilterForm, OrderForm
 from .models import Document, PrintOrder, PrintPrice
 from .workflow import STUDENT_DELETABLE, STUDENT_EDITABLE
@@ -46,9 +47,17 @@ def paginate(request, queryset, per_page=10):
     return page_obj, query.urlencode()
 
 
+def warn_if_bad_filter(request, form):
+    """Wrong filter input never crashes the page: show a message and ignore the filter."""
+    if form.is_bound and not form.is_valid():
+        problems = " ".join(str(e) for errors in form.errors.values() for e in errors)
+        messages.error(request, f"The filter was ignored. {problems}")
+
+
 @role_required(STUDENT)
 def order_list(request):
     form = OrderFilterForm(request.GET or None)
+    warn_if_bad_filter(request, form)
     orders = (
         PrintOrder.objects.for_student(request.user)  # BR-07
         .select_related("shop", "document", "price").order_by("-order_date")
@@ -68,7 +77,8 @@ def order_create(request):
     if request.method == "POST":
         form = OrderForm(request.POST, user=user)
         if form.is_valid():
-            order = form.save()  # total_amount is computed in PrintOrder.save()
+            with transaction.atomic():
+                order = form.save()  # total_amount is computed in PrintOrder.save()
             messages.success(
                 request, f"Order #{order.order_id} placed at {order.shop.name}. Total: ₱{order.total_amount}.")
             return redirect("printing:order_detail", pk=order.pk)
@@ -144,8 +154,19 @@ def order_cancel(request, pk):
 
 
 @role_required(STUDENT)
-@require_POST
+@require_http_methods(["GET", "POST"])
 def order_delete(request, pk):
+    """GET = 'Are you sure?' page (changes nothing). POST = delete."""
+    if request.method == "GET":
+        order = get_object_or_404(PrintOrder.objects.for_student(request.user), pk=pk)
+        if order.status not in STUDENT_DELETABLE:
+            messages.error(request, "Only pending or cancelled orders can be deleted.")
+            return redirect("printing:order_detail", pk=pk)
+        return render_confirm(
+            request, title=f"Delete order #{order.order_id}?",
+            message="This order will be removed from your history. This cannot be undone.",
+            action_url=request.path, cancel_url=f"/printing/orders/{order.pk}/")
+
     with transaction.atomic():
         order = get_object_or_404(
             PrintOrder.objects.for_student(request.user).select_for_update(of=("self",)), pk=pk)

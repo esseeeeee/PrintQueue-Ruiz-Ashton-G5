@@ -1,0 +1,13 @@
+{% extends "printing/base_printing.html" %}
+{% block title %}{{ title }} · PrintQueue{% endblock %}
+{% block pq %}
+<div class="card narrow">
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <form method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    <button type="submit" class="btn danger">{{ confirm_label }}</button>
+    <a class="btn ghost" href="{{ cancel_url }}">No, go back</a>
+  </form>
+</div>
+{% endblock %}

@@ -23,10 +23,7 @@
       </form>
     {% endif %}
     {% if can_delete %}
-      <form method="post" action="{% url 'printing:order_delete' order.order_id %}" class="inline"
-            onsubmit="return confirm('Permanently delete this order?');">
-        {% csrf_token %}<button type="submit" class="btn small danger">Delete</button>
-      </form>
+      <a class="btn small danger" href="{% url 'printing:order_delete' order.order_id %}">Delete</a>
     {% endif %}
   </div>
   {% if order.status == "READY FOR PICKUP" %}
